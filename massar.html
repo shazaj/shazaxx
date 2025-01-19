@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calcul des Moyennes</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            background-color: #f8f9fa;
+        }
+
+        h1 {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        h2 {
+            color: #333;
+        }
+
+        .form-container {
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #ffffff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        button {
+            padding: 10px 15px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        #moyenneTable {
+            max-width: 600px;
+            margin: 20px auto;
+            text-align: left;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 8px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #007bff;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Calcul des Moyennes des Matières</h1>
+
+    <!-- Formulaires dynamiques -->
+    <div id="form-container" class="form-container">
+        <!-- Le contenu des formulaires sera généré dynamiquement -->
+    </div>
+
+    <div id="moyenneTable" class="hidden">
+        <h2>Résultats</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Matière</th>
+                    <th>Moyenne</th>
+                </tr>
+            </thead>
+            <tbody id="resultsBody">
+                <!-- Les résultats calculés seront ajoutés ici -->
+            </tbody>
+        </table>
+        <p id="moyenneGenerale"><strong>Moyenne Générale :</strong> </p>
+    </div>
+
+    <script>
+        // Liste des matières avec leurs coefficients
+        const subjects = [
+            { name: "Comportement", coef: 1, inputs: 1, hasActivity: false },
+            { name: "Éducation Islamique", coef: 2, inputs: 2, hasActivity: true },
+            { name: "Philosophie", coef: 2, inputs: 2, hasActivity: true },
+            { name: "Anglais", coef: 3, inputs: 2, hasActivity: true },
+            { name: "EPS", coef: 4, inputs: 2, hasActivity: true },
+            { name: "Arabe", coef: 2, inputs: 2, hasActivity: true },
+            { name: "Français", coef: 2, inputs: 4, hasActivity: true },
+            { name: "SVT", coef: 5, inputs: 2, hasActivity: true },
+            { name: "Physique-Chimie", coef: 7, inputs: 3, hasActivity: true },
+            { name: "Mathématiques", coef: 7, inputs: 3, hasActivity: false },
+        ];
+
+        let currentSubjectIndex = 0;
+        const results = {};
+
+        // Génération d'un formulaire pour une matière donnée
+        function generateForm(subject) {
+            const container = document.getElementById("form-container");
+            container.innerHTML = `<h2>${subject.name} (Coef ${subject.coef})</h2>`;
+            for (let i = 1; i <= subject.inputs; i++) {
+                container.innerHTML += `
+                    <label for="${subject.name.toLowerCase()}-c${i}">Contrôle ${i}:</label>
+                    <input type="number" id="${subject.name.toLowerCase()}-c${i}" min="0" max="20" required>
+                `;
+            }
+            if (subject.hasActivity) {
+                container.innerHTML += `
+                    <label for="${subject.name.toLowerCase()}-act">Activité :</label>
+                    <input type="number" id="${subject.name.toLowerCase()}-act" min="0" max="20" required>
+                `;
+            }
+            container.innerHTML += `
+                <button onclick="handleNext()">Suivant</button>
+            `;
+        }
+
+        // Calcul de la moyenne d'une matière
+        function calculateSubjectAverage(subject) {
+            let total = 0;
+            let controls = 0;
+            for (let i = 1; i <= subject.inputs; i++) {
+                const value = parseFloat(document.getElementById(`${subject.name.toLowerCase()}-c${i}`).value) || 0;
+                total += value;
+                controls++;
+            }
+            if (subject.hasActivity) {
+                const activity = parseFloat(document.getElementById(`${subject.name.toLowerCase()}-act`).value) || 0;
+                return ((total / controls) * 0.75 + activity * 0.25).toFixed(2);
+            } else {
+                return (total / controls).toFixed(2);
+            }
+        }
+
+        // Gérer le passage au formulaire suivant
+        function handleNext() {
+            const subject = subjects[currentSubjectIndex];
+            const moyenne = calculateSubjectAverage(subject);
+            results[subject.name] = { moyenne: parseFloat(moyenne), coef: subject.coef };
+
+            currentSubjectIndex++;
+            if (currentSubjectIndex < subjects.length) {
+                generateForm(subjects[currentSubjectIndex]);
+            } else {
+                displayResults();
+            }
+        }
+
+        // Affichage des résultats
+        function displayResults() {
+            document.getElementById("form-container").classList.add("hidden");
+            const resultsBody = document.getElementById("resultsBody");
+            let total = 0;
+            let totalCoef = 0;
+
+            for (const [name, data] of Object.entries(results)) {
+                resultsBody.innerHTML += `
+                    <tr>
+                        <td>${name}</td>
+                        <td>${data.moyenne}</td>
+                    </tr>
+                `;
+                total += data.moyenne * data.coef; // Ajoute la moyenne pondérée par le coefficient
+                totalCoef += data.coef; // Ajoute le coefficient total
+            }
+
+            const moyenneGenerale = (total / totalCoef).toFixed(2);
+            document.getElementById("moyenneGenerale").innerText = `Moyenne Générale : ${moyenneGenerale}`;
+            document.getElementById("moyenneTable").classList.remove("hidden");
+        }
+
+        // Initialiser le premier formulaire
+        generateForm(subjects[0]);
+    </script>
+</body>
+</html>
